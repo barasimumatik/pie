@@ -156,7 +156,10 @@ final class WindowsBuild implements Build
             throw new \RuntimeException("File does not exist!");
         }
 
-        $io->write( "build task: ". $task);
+        // Try to find enable/with to enable the extension
+        $configureOptions = $this->tryEnableExtension($downloadedPackage, $configureOptions, $io);
+        
+        $configureArgs = implode(" ", $configureOptions);       
 
         $outputCallback = Process::outputCallbackForVerbosity($io, IOInterface::DEBUG);
         $result = Process::run(
@@ -165,7 +168,7 @@ final class WindowsBuild implements Build
                 "-c", $compiler,
                 "-a", $architecture,
                 "-t", $task,
-                "--task-args", "$phpizeCommand --with-amqp --with-ra",
+                "--task-args", "$phpizeCommand $configureArgs",
             ],
             $downloadedPackage->extractedSourcePath,
             timeout: 600, // Allow at least 10 minutes for the compilation
@@ -307,5 +310,50 @@ final class WindowsBuild implements Build
                 fclose($fileHandle);
             }   
         }
+    }
+
+    /** @param list<non-empty-string> $configureOptions */
+    private function tryEnableExtension(DownloadedPackage $downloadedPackage, array $configureOptions, IOInterface $io){
+        $enableExtensionOptionName = "enable-".$downloadedPackage->package->extensionName()->name();
+        $enableExtensionOption = "--$enableExtensionOptionName";
+        $enableExtensionOptionValue = "$enableExtensionOption=shared";
+
+        $withExtensionOptionName = "with-".$downloadedPackage->package->extensionName()->name();
+        $withExtensionOption = "--$withExtensionOptionName";
+        $withExtensionOptionValue = "$withExtensionOption=shared";
+
+        $foundExtensionOption = false;
+        foreach ( $downloadedPackage->package->configureOptions() as $availableOption){
+            // TODO: make sure this check can handle the optional assigned value as well
+            if ($availableOption->name === $enableExtensionOptionName){
+                if (!in_array($enableExtensionOption, $configureOptions)){
+                    $io->write("Found config option $enableExtensionOption to enable the extension: adding $enableExtensionOptionValue to configuration.");
+                    array_push( $configureOptions, $enableExtensionOptionValue );
+                } else {
+                    $io->write("Found config option $enableExtensionOption to enable the extension: already set.");
+                }
+                $foundExtensionOption = true;
+                break;
+            }
+            else if ($availableOption->name === $withExtensionOptionName){
+                // TODO: make sure this check can handle the optional assigned value as well
+                if (!in_array($withExtensionOption, $configureOptions)){
+                    $io->write("Found config option $withExtensionOption to enable the extension: adding $withExtensionOptionValue to configuration.");
+                    array_push( $configureOptions, $withExtensionOptionValue );
+                }
+                else {
+                    $io->write("Found config option $withExtensionOption to enable the extension: already set.");
+                }
+                
+                $foundExtensionOption = true;
+                break;
+            }
+        }
+    
+        if (!$foundExtensionOption){
+            throw new \RuntimeException("Did not find any configuration option to enable the extension ". $downloadedPackage->package->extensionName()->name());
+        }
+
+        return $configureOptions;
     }
 }
