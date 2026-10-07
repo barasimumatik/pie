@@ -6,7 +6,6 @@ namespace Php\Pie\Downloading;
 
 use Composer\Package\CompletePackageInterface;
 use Php\Pie\DependencyResolver\Package;
-use Php\Pie\Platform\OperatingSystem;
 use Php\Pie\Platform\PrePackagedBinaryAssetName;
 use Php\Pie\Platform\PrePackagedSourceAssetName;
 use Php\Pie\Platform\TargetPlatform;
@@ -61,13 +60,13 @@ enum DownloadUrlMethod: string
     /** @return non-empty-list<DownloadUrlMethod> */
     public static function possibleDownloadUrlMethodsForPackage(Package $package, TargetPlatform $targetPlatform): array
     {
-        /**
-         * PIE does not support building on Windows (yet, at least). Maintainers
-         * should provide pre-built Windows binaries.
-         */
-        if ($targetPlatform->operatingSystem === OperatingSystem::Windows) {
-            return [self::WindowsBinaryDownload];
-        }
+        // /**
+        //  * PIE does not support building on Windows (yet, at least). Maintainers
+        //  * should provide pre-built Windows binaries.
+        //  */
+        // if ($targetPlatform->operatingSystem === OperatingSystem::Windows) {
+        //     return [self::WindowsBinaryDownload];
+        // }
 
         $configuredSupportedMethods = $package->supportedDownloadUrlMethods();
         if ($configuredSupportedMethods === null) {

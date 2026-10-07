@@ -71,6 +71,7 @@ final class BuildCommand extends Command
         CommandHelper::applyNoCacheOptionIfSet($input, $this->io);
 
         if (CommandHelper::shouldCheckForBuildTools($input)) {
+            // TODO: for windows
             $this->checkBuildTools->check(
                 $this->io,
                 PackageManager::detect(),
@@ -92,6 +93,8 @@ final class BuildCommand extends Command
         );
 
         if (CommandHelper::shouldCheckSystemDependencies($input)) {
+
+            // TODO: for windows?
             foreach ($requestedNamesAndVersions as $requestedNameAndVersion) {
                 try {
                     ($this->prescanSystemDependencies)(

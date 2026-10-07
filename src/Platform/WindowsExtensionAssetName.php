@@ -53,6 +53,12 @@ final class WindowsExtensionAssetName
                 $targetPlatform->architecture->name,
                 $fileExtension,
             )),
+            // Just a test. This is the default name of the version built from source.
+            strtolower(sprintf(
+                'php_%s.%s',
+                $package->extensionName()->name(),
+                $fileExtension,
+            )),
         ];
     }
 
@@ -74,6 +80,14 @@ final class WindowsExtensionAssetName
         $possibleDllNames = self::dllNames($targetPlatform, $package->package);
         foreach ($possibleDllNames as $dllName) {
             $fullDllName = $package->extractedSourcePath . '/' . $dllName;
+            if (file_exists($fullDllName)) {
+                return $fullDllName;
+            }
+
+            $architecture = $targetPlatform->architecture === Architecture::x86_64 ? "x64" : "x86";
+            $buildDirectory = sprintf("$architecture\Release%s", $targetPlatform->threadSafety === ThreadSafetyMode::ThreadSafe ? "_TS" : "");
+
+            $fullDllName = $package->extractedSourcePath . "\\$buildDirectory\\$dllName";
             if (file_exists($fullDllName)) {
                 return $fullDllName;
             }
